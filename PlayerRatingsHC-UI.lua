@@ -7,26 +7,33 @@ local submitButton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
 local dungeonInfoText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 local currentDungeonID = nil
 local playerEntries = {}
-local playerListContainer = CreateFrame("frame", nil, frame)
+local playerListContainer = CreateFrame("Frame", nil, frame, "BackdropTemplate")
+
+playerListContainer:SetPoint("TOP", separator, "BOTTOM", 0, -10)
+playerListContainer:SetSize(250, 200)
 
 -- if user has been rated, then disable checkboxes.
 local function UpdateRatingState(playerName)
-  if addon.Core.HasRatedPlayerForDungeon and addon.Core.GetCurrentDungeonID  then
+  if addon.Core.HasRatedPlayerForDungeon and addon.Core.GetCurrentDungeonID then
     local dungeonID = addon.Core.GetCurrentDungeonID()
     if dungeonID then
       print("Checking rating state for:", playerName)
       print("Current dungeon ID:", dungeonID)
-      local hasRated = addon.Core.HasRatedPlayerForDungeon(playerName, dungeonID)
-      print("Has rated:", hasRated)
-    
-      positiveCheck:SetEnabled(not hasRated)
-      negativeCheck:SetEnabled(not hasRated)
-    
-      if hasRated then
-        ratedText:SetText("Rated")
-        ratedText:Show()
-      else
-        ratedText:Hide()
+      
+      local entry = playerEntries[playerName]
+      if entry then
+        local hasRated = addon.Core.HasRatedPlayerForDungeon(playerName, dungeonID)
+        print("Has rated:", hasRated)
+        
+        entry.positiveCheck:SetEnabled(not hasRated)
+        entry.negativeCheck:SetEnabled(not hasRated)
+        
+        if hasRated then
+          entry.ratedText:SetText("Rated")
+          entry.ratedText:Show()
+        else
+          entry.ratedText:Hide()
+        end
       end
     end
   end
@@ -39,25 +46,35 @@ local function CreatePlayerEntry(playerName)
   local negativeCheck = CreateFrame("CheckButton", nil, entry, "UICheckButtonTemplate")
   local ratedText = entry:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 
+  if not playerListContainer.headersCreated then
+    local plusHeader = playerListContainer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    local minusHeader = playerListContainer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    plusHeader:SetPoint("RIGHT", entry, "RIGHT", -25, 15) 
+    minusHeader:SetPoint("RIGHT", plusHeader, "LEFT", -30, 0)
+    plusHeader:SetText("+ 1")
+    minusHeader:SetText("- 1")
+    playerListContainer.headersCreated = true
+  end
+
   entry:SetSize(250, 30)
-  nameText:SetPoint("LEFT", entry, "LEFT", 10, 0)
-  nametext:SetText(playerName)
-  positiveCheck:SetPoint("RIGHT", entry, "RIGHT", -40, 0)
-  negativeCheck:SetPoint("RIGHT", positiveCheck, "LEFT", -20, 0)
-  ratedText:SetPoint("RIGHT", negativeCheck, "LEFT", -10, 0)
+  nameText:SetPoint("LEFT", entry, "LEFT", 10, -5)
+  nameText:SetText(playerName)
+  positiveCheck:SetPoint("RIGHT", entry, "RIGHT", -20, -5)
+  negativeCheck:SetPoint("RIGHT", positiveCheck, "LEFT", -10, 0)
+  ratedText:SetPoint("RIGHT", negativeCheck, "LEFT", -10, -5)
   ratedText:SetTextColor(0.5, 0.5, 0.5)
   ratedText:Hide()
 
   positiveCheck:SetScript("OnClick", function(self)
     if self:GetChecked() then
-      negativeCheck:SetChecked(false)  -- Uncheck negative if positive is checked
+      negativeCheck:SetChecked(false)
     end
     print("Positive checked:", self:GetChecked())  -- Debug print
   end)
   
   negativeCheck:SetScript("OnClick", function(self)
     if self:GetChecked() then
-      positiveCheck:SetChecked(false)  -- Uncheck positive if negative is checked
+      positiveCheck:SetChecked(false)
     end
     print("Negative checked:", self:GetChecked())  -- Debug print
   end)
@@ -77,23 +94,30 @@ addon.UI.SetDungeonInfo = function(text)
   dungeonInfoText:SetText(text)
   currentDungeonID = dungeonID
 end
+
 addon.UI.UpdatePartyList = function(partyMembers)
   for _, entry in pairs(playerEntries) do
-      entry.frame:Hide()
+    entry.frame:Hide()
   end
   playerEntries = {}
   
   local yOffset = 0
+  local memberCount = 0
+  
+  print("Creating entries for players:") -- Debug
   for playerName in pairs(partyMembers) do
-      local entry = CreatePlayerEntry(playerName)
-      entry.frame:SetPoint("TOP", playerListContainer, "TOP", 0, yOffset)
-      entry.frame:Show()
-      playerEntries[playerName] = entry
-      yOffset = yOffset - 35 
+    print("Creating for:", playerName) -- Debug
+    local entry = CreatePlayerEntry(playerName)
+    entry.frame:SetPoint("TOP", playerListContainer, "TOP", 0, yOffset)
+    entry.frame:Show()
+    playerEntries[playerName] = entry
+    yOffset = yOffset - 35
+    memberCount = memberCount + 1
   end
   
-  local totalHeight = math.abs(yOffset) + 100
+  local totalHeight = (memberCount * 35) + 100
   frame:SetHeight(math.max(200, totalHeight))
+  print("Created", memberCount, "entries") -- Debug
 end
 
 -- Main UI Display
@@ -165,12 +189,10 @@ submitButton:SetScript("OnClick", function()
   end
 end)
 
--- Unit Tooltip Score Display
 GameTooltip:HookScript("OnTooltipSetUnit", function(self)
   local name, unit = self:GetUnit()
   if not unit or not name then return end
 
-  -- Get full name with realm
   local fullName = name
   if unit then
     local currentRealm = GetNormalizedRealmName()
