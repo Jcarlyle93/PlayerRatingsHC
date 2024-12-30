@@ -3,17 +3,11 @@ local frame = CreateFrame("Frame", "PlayerRaitingsWindow", UIParent, "BackDropTe
 local separator = frame:CreateTexture(nil, "OVERLAY")
 local titleText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 local closeButton = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
-local playerContainer = CreateFrame("Frame", nil, frame)
-local playerName = UnitName("player")
-local nameText = playerContainer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-local positiveCheck = CreateFrame("CheckButton", nil, playerContainer, "UICheckButtonTemplate")
-local negativeCheck = CreateFrame("CheckButton", nil, playerContainer, "UICheckButtonTemplate")
 local submitButton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-local positiveText = playerContainer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-local negativeText = playerContainer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 local dungeonInfoText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-local ratedText = playerContainer:CreateFontString(nil,"OVERLAY", "GameFontNormal")
 local currentDungeonID = nil
+local playerEntries = {}
+local playerListContainer = CreateFrame("frame", nil, frame)
 
 -- if user has been rated, then disable checkboxes.
 local function UpdateRatingState(playerName)
@@ -38,11 +32,68 @@ local function UpdateRatingState(playerName)
   end
 end
 
+local function CreatePlayerEntry(playerName)
+  local entry = CreateFrame("Frame", nil, playerListContainer)
+  local nameText = entry:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+  local positiveCheck = CreateFrame("CheckButton", nil, entry, "UICheckButtonTemplate")
+  local negativeCheck = CreateFrame("CheckButton", nil, entry, "UICheckButtonTemplate")
+  local ratedText = entry:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+
+  entry:SetSize(250, 30)
+  nameText:SetPoint("LEFT", entry, "LEFT", 10, 0)
+  nametext:SetText(playerName)
+  positiveCheck:SetPoint("RIGHT", entry, "RIGHT", -40, 0)
+  negativeCheck:SetPoint("RIGHT", positiveCheck, "LEFT", -20, 0)
+  ratedText:SetPoint("RIGHT", negativeCheck, "LEFT", -10, 0)
+  ratedText:SetTextColor(0.5, 0.5, 0.5)
+  ratedText:Hide()
+
+  positiveCheck:SetScript("OnClick", function(self)
+    if self:GetChecked() then
+      negativeCheck:SetChecked(false)  -- Uncheck negative if positive is checked
+    end
+    print("Positive checked:", self:GetChecked())  -- Debug print
+  end)
+  
+  negativeCheck:SetScript("OnClick", function(self)
+    if self:GetChecked() then
+      positiveCheck:SetChecked(false)  -- Uncheck positive if negative is checked
+    end
+    print("Negative checked:", self:GetChecked())  -- Debug print
+  end)
+
+  return {
+    frame = entry,
+    nameText = nameText,
+    positiveCheck = positiveCheck,
+    negativeCheck = negativeCheck,
+    ratedText = ratedText
+  }
+end
+
 addon.UI = {}
 addon.UI.mainFrame = frame
 addon.UI.SetDungeonInfo = function(text)
   dungeonInfoText:SetText(text)
   currentDungeonID = dungeonID
+end
+addon.UI.UpdatePartyList = function(partyMembers)
+  for _, entry in pairs(playerEntries) do
+      entry.frame:Hide()
+  end
+  playerEntries = {}
+  
+  local yOffset = 0
+  for playerName in pairs(partyMembers) do
+      local entry = CreatePlayerEntry(playerName)
+      entry.frame:SetPoint("TOP", playerListContainer, "TOP", 0, yOffset)
+      entry.frame:Show()
+      playerEntries[playerName] = entry
+      yOffset = yOffset - 35 
+  end
+  
+  local totalHeight = math.abs(yOffset) + 100
+  frame:SetHeight(math.max(200, totalHeight))
 end
 
 -- Main UI Display
@@ -86,42 +137,10 @@ frame:SetScript("OnMouseUp", function(self, button)
   end
 end)
 
-positiveText:SetPoint("BOTTOM", positiveCheck, "TOP", 0, 2)
-positiveText:SetText("+")
-
-negativeText:SetPoint("BOTTOM", negativeCheck, "TOP", 0, 2)
-negativeText:SetText("-")
-
--- Player List
-playerContainer:SetSize(250, 30)
-playerContainer:SetPoint("TOP", titleText, "BOTTOM", 0, -50)
-nameText:SetPoint("LEFT", playerContainer, "LEFT", 10, 0)
-nameText:SetText(playerName)
-ratedText:SetPoint("RIGHT", negativeCheck, "LEFT", -10, 0)
-ratedText:SetTextColor(0.5, 0.5, 0.5)
-ratedText:Hide()
-
 -- Exit Button
 closeButton:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -3, -1)
 closeButton:SetScript("OnClick", function()
   frame:Hide()
-end)
-
--- Ratings Checkbox
-positiveCheck:SetPoint("RIGHT", playerContainer, "RIGHT", -40, 0)
-positiveCheck:SetScript("OnClick", function(self)
-  if self:GetChecked() then
-    negativeCheck:SetChecked(false)  -- Uncheck negative if positive is checked
-  end
-  print("Positive checked:", self:GetChecked())  -- Debug print
-end)
-
-negativeCheck:SetPoint("RIGHT", positiveCheck, "LEFT", -20, 0)
-negativeCheck:SetScript("OnClick", function(self)
-  if self:GetChecked() then
-    positiveCheck:SetChecked(false)  -- Uncheck positive if negative is checked
-  end
-  print("Negative checked:", self:GetChecked())  -- Debug print
 end)
 
 -- Submit Button
@@ -129,17 +148,20 @@ submitButton:SetSize(80, 25)
 submitButton:SetPoint("BOTTOM", frame, "BOTTOM", 0, 10)
 submitButton:SetText("Submit")
 submitButton:SetScript("OnClick", function()
-  -- Get the current rating selection
-  if positiveCheck:GetChecked() or negativeCheck:GetChecked() then
-    local isPositive = positiveCheck:GetChecked()
-    addon.Core.SendRating(playerName, isPositive)
-    positiveCheck:SetChecked(false)
-    negativeCheck:SetChecked(false)
-    
-    UpdateRatingState(playerName)
-    print("Rating sent for " .. playerName)
-  else
-    print("Please select a rating first!")
+  local anyRatingsGiven = false
+  for playerName, entry in pairs(playerEntries) do
+    if entry.positiveCheck:GetChecked() or entry.negativeCheck:GetChecked() then
+        local isPositive = entry.positiveCheck:GetChecked()
+        addon.Core.SendRating(playerName, isPositive)
+        entry.positiveCheck:SetChecked(false)
+        entry.negativeCheck:SetChecked(false)
+        anyRatingsGiven = true
+        UpdateRatingState(playerName)
+    end
+  end
+
+  if not anyRatingsGiven then
+      print("Please select at least one rating!")
   end
 end)
 
