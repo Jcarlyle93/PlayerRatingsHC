@@ -1,5 +1,6 @@
 local addonName, addon = ...
 local frame = CreateFrame("Frame", "PlayerRaitingsWindow", UIParent, "BackDropTemplate")
+local separator = frame:CreateTexture(nil, "OVERLAY")
 local titleText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 local closeButton = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
 local playerContainer = CreateFrame("Frame", nil, frame)
@@ -10,9 +11,39 @@ local negativeCheck = CreateFrame("CheckButton", nil, playerContainer, "UICheckB
 local submitButton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
 local positiveText = playerContainer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 local negativeText = playerContainer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+local dungeonInfoText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+local ratedText = playerContainer:CreateFontString(nil,"OVERLAY", "GameFontNormal")
+local currentDungeonID = nil
+
+-- if user has been rated, then disable checkboxes.
+local function UpdateRatingState(playerName)
+  if addon.Core.HasRatedPlayerForDungeon and addon.Core.GetCurrentDungeonID  then
+    local dungeonID = addon.Core.GetCurrentDungeonID()
+    if dungeonID then
+      print("Checking rating state for:", playerName)
+      print("Current dungeon ID:", dungeonID)
+      local hasRated = addon.Core.HasRatedPlayerForDungeon(playerName, dungeonID)
+      print("Has rated:", hasRated)
+    
+      positiveCheck:SetEnabled(not hasRated)
+      negativeCheck:SetEnabled(not hasRated)
+    
+      if hasRated then
+        ratedText:SetText("Rated")
+        ratedText:Show()
+      else
+        ratedText:Hide()
+      end
+    end
+  end
+end
 
 addon.UI = {}
 addon.UI.mainFrame = frame
+addon.UI.SetDungeonInfo = function(text)
+  dungeonInfoText:SetText(text)
+  currentDungeonID = dungeonID
+end
 
 -- Main UI Display
 frame:SetSize(300, 200)
@@ -35,6 +66,14 @@ frame:SetBackdropColor(0, 0, 0, 0.8)
 titleText:SetPoint("TOP", frame, "TOP", 0, -10)
 titleText:SetText("Player Ratings")
 
+dungeonInfoText:SetPoint("TOP", titleText, "BOTTOM", 0, -5)
+dungeonInfoText:SetText("")
+
+separator:SetHeight(1)
+separator:SetWidth(frame:GetWidth() - 20)
+separator:SetPoint("TOP", dungeonInfoText, "BOTTOM", 0, -10)
+separator:SetColorTexture(0.6, 0.6, 0.6, 0.8)
+
 frame:SetScript("OnMouseDown", function(self, button)
   if button == "LeftButton" then
     self:StartMoving()
@@ -55,9 +94,12 @@ negativeText:SetText("-")
 
 -- Player List
 playerContainer:SetSize(250, 30)
-playerContainer:SetPoint("TOP", titleText, "BOTTOM", 0, -20)
+playerContainer:SetPoint("TOP", titleText, "BOTTOM", 0, -50)
 nameText:SetPoint("LEFT", playerContainer, "LEFT", 10, 0)
 nameText:SetText(playerName)
+ratedText:SetPoint("RIGHT", negativeCheck, "LEFT", -10, 0)
+ratedText:SetTextColor(0.5, 0.5, 0.5)
+ratedText:Hide()
 
 -- Exit Button
 closeButton:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -3, -1)
@@ -94,6 +136,7 @@ submitButton:SetScript("OnClick", function()
     positiveCheck:SetChecked(false)
     negativeCheck:SetChecked(false)
     
+    UpdateRatingState(playerName)
     print("Rating sent for " .. playerName)
   else
     print("Please select a rating first!")
@@ -126,6 +169,12 @@ GameTooltip:HookScript("OnTooltipSetUnit", function(self)
         tonumber(string.sub(color, 5, 6), 16)/255)
     end
   end
+end)
+
+frame:SetScript("OnShow", function()
+  local dungeonID = addon.Core.GetCurrentDungeonID()
+  print("Current dungeon ID from Core:", dungeonID)
+  UpdateRatingState(playerName)
 end)
 
 SLASH_PLAYERSRATINGSHC1 = "/prating"

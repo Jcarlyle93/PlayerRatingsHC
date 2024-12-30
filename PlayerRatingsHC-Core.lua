@@ -2,6 +2,9 @@ local addonName, addon = ...
 
 local ADDON_MSG_PREFIX = "PRHC"
 local MSG_TYPE_RATING = "RATE"
+local currentDungeonID = nil
+local inDungeon = false
+local partyMembers = {}
 
 local SECURITY_KEYS = {
   "hK9$mP2#", "jL5*nQ7@", "rT3&vW4!", "xY8%zA6#" 
@@ -18,9 +21,31 @@ PlayerRatingsHCDB = PlayerRatingsHCDB or {
   ratings = {},
   checksumData = {},
   validationLog = {},
+  outgoingRatings = {},
   version = 1
 }
+
+PlayerRatingsHCDB.ratings = PlayerRatingsHCDB.ratings or {}
+PlayerRatingsHCDB.checksumData = PlayerRatingsHCDB.checksumData or {}
+PlayerRatingsHCDB.validationLog = PlayerRatingsHCDB.validationLog or {}
+PlayerRatingsHCDB.outgoingRatings = PlayerRatingsHCDB.outgoingRatings or {}
+
 addon.DB = PlayerRatingsHCDB
+
+local function HasRatedPlayerForDungeon(playerName, dungeonID)
+  PlayerRatingsHCDB.outgoingRatings = PlayerRatingsHCDB.outgoingRatings or {}
+  
+  if not PlayerRatingsHCDB.outgoingRatings[dungeonID] then
+    return false
+  end
+
+  return PlayerRatingsHCDB.outgoingRatings[dungeonID][playerName] == true
+end
+
+local function RecordOutgoingRating(playerName, dungeonID)
+  PlayerRatingsHCDB.outgoingRatings[dungeonID] = PlayerRatingsHCDB.outgoingRatings[dungeonID] or {}
+  PlayerRatingsHCDB.outgoingRatings[dungeonID][playerName] = true
+end
 
 local function TransformRating(rating, key)
   local transformed = rating
@@ -61,20 +86,18 @@ local function GenerateComplexSignature(rating, timestamp, sender)
 end
 
 local function StoreRatingWithMultipleChecks(sender, rating, timestamp)
-  -- Store in three different ways
+
   PlayerRatingsHCDB.ratings[sender] = {
     rating = rating,
     timestamp = timestamp,
-    signature = GenerateComplexSignature(rating, timestamp, sender)
+    signature = GenerateComplexSignature(rating, timestamp, sender),
   }
   
-  -- Store transformed version
   PlayerRatingsHCDB.checksumData[sender] = {
     value = TransformRating(rating, TRANSFORM_KEYS.PRIMARY),
-    timestamp = TransformRating(timestamp, TRANSFORM_KEYS.SECONDARY)
+    timestamp = TransformRating(timestamp, TRANSFORM_KEYS.SECONDARY),
   }
   
-  -- Store another transformed version
   PlayerRatingsHCDB.validationLog[sender] = {
     checksum = TransformRating(rating, TRANSFORM_KEYS.TERTIARY),
     timekey = bit.bxor(timestamp, TRANSFORM_KEYS.PRIMARY)
@@ -82,15 +105,20 @@ local function StoreRatingWithMultipleChecks(sender, rating, timestamp)
 end
 
 local function VerifyRatingIntegrity(sender)
+
   local mainData = PlayerRatingsHCDB.ratings[sender]
+  if not mainData then 
+    print("No main data found")
+    return false 
+  end
+  
   local checksumData = PlayerRatingsHCDB.checksumData[sender]
   local validationData = PlayerRatingsHCDB.validationLog[sender]
-
-  if not mainData or not checksumData or not validationData then
-    return false
-  end
-
-  -- Verify transforms match
+  
+  local expectedChecksum = TransformRating(mainData.rating, TRANSFORM_KEYS.PRIMARY)
+  local expectedTimeTransform = TransformRating(mainData.timestamp, TRANSFORM_KEYS.SECONDARY)
+  local expectedValidationChecksum = TransformRating(mainData.rating, TRANSFORM_KEYS.TERTIARY)
+  local expectedTimeKey = bit.bxor(mainData.timestamp, TRANSFORM_KEYS.PRIMARY)
   local expectedChecksum = TransformRating(mainData.rating, TRANSFORM_KEYS.PRIMARY)
   local expectedTimeTransform = TransformRating(mainData.timestamp, TRANSFORM_KEYS.SECONDARY)
   local expectedValidationChecksum = TransformRating(mainData.rating, TRANSFORM_KEYS.TERTIARY)
@@ -117,13 +145,17 @@ local function HandleAddonMessage(message, sender)
   
   if msgType == MSG_TYPE_RATING then
     if target == UnitName("player") then
-      -- Get current rating if it exists
       local currentRating = 0
+      dungeonID = tonumber(dungeonID)
+      
+      if HasRatedPlayerForDungeon(sender, dungeonID) then
+        print("You've already rated ")
+        return
+      end
       if PlayerRatingsHCDB.ratings[sender] and VerifyRatingIntegrity(sender) then
         currentRating = PlayerRatingsHCDB.ratings[sender].rating
       end
 
-      -- Store new rating with all security measures
       StoreRatingWithMultipleChecks(
         sender, 
         currentRating + tonumber(rating),
@@ -135,10 +167,35 @@ local function HandleAddonMessage(message, sender)
   end
 end
 
--- Event Frame setup
+local function UpdatePartyMembers()
+  if not currentDungeonID then return end
+
+  if IsInGroup() then
+    for i = 1, getNumGroupMembers() do
+      local name = GetRaidRosterInfo(i)
+      if name and name ~= UnitName("player") then
+        if not string.find(name, "-") then
+          name = name .. "-" .. GetNormalizedRealmName()
+        end
+
+        if not partyMembers[name] then
+          partyMembers[name] = true
+          print("Added party member", name) -- debug
+        end
+      end
+    end
+  end
+end
+
+-- Event Frame setups
 local eventFrame = CreateFrame("Frame")
 eventFrame:RegisterEvent("ADDON_LOADED")
 eventFrame:RegisterEvent("CHAT_MSG_ADDON")
+eventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
+eventFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
+eventFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
+eventFrame:RegisterEvent("PARTY_MEMBER_ENABLE")
+eventFrame:RegisterEvent("PARTY_MEMBER_DISABLE")
 
 C_ChatInfo.RegisterAddonMessagePrefix(ADDON_MSG_PREFIX)
 
@@ -150,15 +207,65 @@ eventFrame:SetScript("OnEvent", function(self, event, ...)
     if prefix == ADDON_MSG_PREFIX then
       HandleAddonMessage(message, sender)
     end
+  elseif event == "GROUP_ROSTER_UPDATE" or
+         event == "PARTY_MEMBER_ENABLE" or
+         event == "PARTY_MEMBER_DISABLE" then
+    UpdatePartyMembers()
+  elseif event == "PLAYER_ENTERING_WORLD" or event == "ZONE_CHANGED_NEW_AREA" then
+    local name, instanceType, _, _, _, _, _, instanceID = GetInstanceInfo()
+    local wasInDungeon = inDungeon
+
+    if instanceType == "party" then
+      inDungeon = true
+      if currentDungeonID ~= instanceID then
+        currentDungeonID = instanceID
+        currentDungeonName = name
+        print("Entered Dungeon", name, "ID:", instanceID)
+      end
+    else
+      inDungeon = false
+      if wasInDungeon then
+        print("Left Dungeon", currentDungeonName, currentDungeonID or "unknown")
+        lastDungeonID = currentDungeonID
+        lastDungeonName = currentDungeonName
+        addon.Core.UpdateDungeonInfo(lastDungeonName, lastDungeonID)
+        addon.UI.mainFrame:Show()   
+        currentDungeonID = nil
+        currentDungeonName = nil    
+      end
+    end
   end
 end)
 
 -- Expose necessary functions to addon namespace
 addon.Core = {
   SendRating = function(targetPlayer, isPositive)
+    local dungeonID = currentDungeonID or lastDungeonID
+    if not dungeonID then
+      print("Error: No dungeon ID available")
+      return
+    end
+    if HasRatedPlayerForDungeon(targetPlayer, dungeonID) then
+      print("You have already rated " .. targetPlayer .. " for this dungeon")
+      return
+    end
     local rating = isPositive and 1 or -1
     local message = string.format("%s:%s:%d", MSG_TYPE_RATING, targetPlayer, rating)
     C_ChatInfo.SendAddonMessage(ADDON_MSG_PREFIX, message, "WHISPER", targetPlayer)
+    RecordOutgoingRating(targetPlayer, dungeonID)
   end,
-  VerifyRatingIntegrity = VerifyRatingIntegrity
+  VerifyRatingIntegrity = VerifyRatingIntegrity,
+  UpdateDungeonInfo = function(name, id)
+    if addon.UI and addon.UI.SetDungeonInfo then
+      addon.UI.SetDungeonInfo(string.format("Rate players for %s (ID: %s)", name, id))
+    end
+  end,
+  HasRatedPlayerForDungeon = HasRatedPlayerForDungeon,
+  SetCurrentDungeonID = function(id)
+    currentDungeonID = id
+    lastDungeonID = id
+  end,
+  GetCurrentDungeonID = function()
+    return currentDungeonID or lastDungeonID 
+  end
 }
