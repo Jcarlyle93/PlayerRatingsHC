@@ -2,6 +2,7 @@
 ## Title: PlayerRatingsHC
 ## Notes: Rating system for HC WoW PlayerRatingsHC
 ## SavedVariablesPerCharacter: PlayerRatingsHCDB
+## Author: indelible @ Discord
 
 PlayerRatingsHC-Core.lua
 PlayerRatingsHC-UI.lua
