@@ -170,14 +170,20 @@ local function HandleAddonMessage(message, sender)
 end
 
 local function UpdatePartyMembers()
-  if not currentDungeonID then return end
+  if not currentDungeonID then 
+    print("not in dungeon")
+    return 
+  end
 
   if IsInGroup() then
-    for i = 1, getNumGroupMembers() do
+    print("in group")
+    for i = 1, GetNumGroupMembers() do
       local name = GetRaidRosterInfo(i)
       if name and name ~= UnitName("player") then
         if not string.find(name, "-") then
-          name = name .. "-" .. GetNormalizedRealmName()
+          local currentRealm = GetNormalizedRealmName()
+          print(name)
+          name = name .. "-" .. currentRealm
         end
 
         if not partyMembers[name] then
@@ -208,7 +214,7 @@ local function CanManageBewareList()
   return true
 end
 
-local function AddToBewareList(playerName)
+local function AddToBewareList(playerName, note)
   print("Adding to beware list:", playerName)
   print("PlayerRatingsHCDB exists:", PlayerRatingsHCDB ~= nil)
   print("playerBewareList exists:", PlayerRatingsHCDB.playerBewareList ~= nil)
@@ -224,7 +230,8 @@ local function AddToBewareList(playerName)
   
   PlayerRatingsHCDB.playerBewareList[playerName] = {
     addedBy = UnitName("player"),
-    timestamp = time()
+    timestamp = time(),
+    note = note or ""
   }
   
   C_ChatInfo.SendAddonMessage(ADDON_MSG_PREFIX, "BEWARE_ADD:" .. playerName, "GUILD")
@@ -264,7 +271,7 @@ eventFrame:SetScript("OnEvent", function(self, event, ...)
   elseif event == "PLAYER_ENTERING_WORLD" or event == "ZONE_CHANGED_NEW_AREA" then
     local name, instanceType, _, _, _, _, _, instanceID = GetInstanceInfo()
     local wasInDungeon = inDungeon
-
+    UpdatePartyMembers()
     if instanceType == "party" then
       inDungeon = true
       if currentDungeonID ~= instanceID then

@@ -5,12 +5,26 @@ if not addon then
   return
 end
 
+local function NormalizeTestName(name)
+  if not string.find(name, "-") then
+    local realm = GetNormalizedRealmName()
+    if realm then
+      print("Adding realm to", name, ":", realm)  -- Debug print
+      return name .. "-" .. realm
+    else
+      print("Warning: Could not get realm name for", name)  -- Debug print
+      return name
+    end
+  end
+  return name
+end
+
 local testData = {
   testParty = {
-    ["Wibber"] = true,
-    ["Schmaco"] = true,
-    ["Cowfarther"] = true,
-    ["Tswift"] = true
+    [NormalizeTestName("Wibber")] = true,
+    [NormalizeTestName("Schmaco")] = true,
+    [NormalizeTestName("Cowfarther")] = true,
+    [NormalizeTestName("Tswift")] = true
   },
   testDungeonID = 1337,
   testDungeonName = "Indelible's Dungeon"
