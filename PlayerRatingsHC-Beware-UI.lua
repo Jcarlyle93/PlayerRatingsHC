@@ -134,7 +134,7 @@ addon.BewareUI = {
   CreateBewareListUI = CreateBewareListUI
 }
 
-SLASH_PLAYERBEWARE1 = "/pbeware"
+SLASH_PLAYERBEWARE1 = "/beware"
 SlashCmdList["PLAYERBEWARE"] = function(msg)
   if not addon.bewareFrame then
     addon.bewareFrame = CreateBewareListUI()

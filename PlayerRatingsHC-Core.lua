@@ -307,7 +307,7 @@ addon.Core = {
   VerifyRatingIntegrity = VerifyRatingIntegrity,
   UpdateDungeonInfo = function(name, id)
     if addon.UI and addon.UI.SetDungeonInfo then
-      addon.UI.SetDungeonInfo(string.format("Rate players for %s (ID: %s)", name, id))
+      addon.UI.SetDungeonInfo(string.format("Commend players for %s (ID: %s)", name, id))
     end
   end,
   HasRatedPlayerForDungeon = HasRatedPlayerForDungeon,

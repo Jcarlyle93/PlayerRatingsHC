@@ -7,13 +7,14 @@ end
 
 local testData = {
   testParty = {
-    ["TestPlayer1"] = true,
-    ["TestPlayer2"] = true,
-    ["TestPlayer3"] = true,
-    ["TestPlayer4"] = true
+    ["Wibber"] = true,
+    ["Schmaco"] = true,
+    ["Cowfarther"] = true,
+    ["Tswift"] = true,
+    ["Indelible"] = true
   },
-  testDungeonID = 1234,
-  testDungeonName = "Test Dungeon"
+  testDungeonID = 1337,
+  testDungeonName = "Indelible's Dungeon"
 }
 
 -- Simulate complete test scenario
@@ -29,13 +30,15 @@ print("Test data initialized")
 
 SLASH_PRATINGTEST1 = "/prtest"
 SlashCmdList["PRATINGTEST"] = function(msg)
- if msg == "full" then
-   print("Running full test scenario")
-   RunFullTest()
- elseif msg == "party" then
-   addon.UI.UpdatePartyList(testData.testParty)
-   addon.UI.mainFrame:Show()
- elseif msg == "dungeon" then
-   addon.Core.UpdateDungeonInfo(testData.testDungeonName, testData.testDungeonID)
- end
+  if msg == "full" then
+    print("Running full test scenario")
+    RunFullTest()
+  elseif msg == "party" then
+    addon.UI.UpdatePartyList(testData.testParty)
+    addon.Core.UpdateDungeonInfo(testData.testDungeonName, testData.testDungeonID)
+    addon.UI.mainFrame:Show()
+  else
+  print("Running full test scenario")
+    RunFullTest()
+  end
 end
