@@ -6,7 +6,6 @@ local bewareUI = {
 
 local function UpdateBewareList()
   if not bewareUI.listContentFrame then
-    print("Warning: No content frame available") -- debug
     return 
   end
 
@@ -15,10 +14,8 @@ local function UpdateBewareList()
     child:Hide()
   end
 
-  print("Updating beware list display") -- debug
   local yOffset = -5
   for playerName, data in pairs(PlayerRatingsHCDB.playerBewareList) do
-    print("Creating entry for:", playerName) -- debug
     local entry = CreateFrame("Frame", nil, bewareUI.listContentFrame, "BackdropTemplate")
     entry:SetSize(230, 25)
     entry:SetPoint("TOP", 0, yOffset)
@@ -91,21 +88,13 @@ local function CreateBewareListUI()
   addButton:SetScript("OnClick", function()
     local name = editBox:GetText()
     if name and name ~= "" then
-        print("Attempting to add:", name)  -- Debug print
         if addon.Core.AddToBewareList(name) then
-            print("Successfully added to beware list")  -- Debug print
             editBox:SetText("")
             if bewareUI.listContentFrame then
-              print("Content frame exists, updating list") -- Debug print
               UpdateBewareList()
             else
-              print("Error: Content frame not avaliable") -- Debug print
             end
-        else
-            print("Failed to add to beware list")
         end
-    else
-        print("Please enter a player name")
     end
   end)
 
@@ -118,7 +107,6 @@ local function CreateBewareListUI()
   closeButton:SetScript("OnClick", function() frame:Hide() end)
 
   bewareUI.listContentFrame = CreateFrame("Frame", nil, scrollFrame)
-  print("Created content frame:", bewareUI.listContentFrame ~= nil)  -- Debug print
   bewareUI.listContentFrame:SetSize(230, 280)
   scrollFrame:SetScrollChild(bewareUI.listContentFrame)
 

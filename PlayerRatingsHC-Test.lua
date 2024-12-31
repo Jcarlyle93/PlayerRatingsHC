@@ -10,8 +10,7 @@ local testData = {
     ["Wibber"] = true,
     ["Schmaco"] = true,
     ["Cowfarther"] = true,
-    ["Tswift"] = true,
-    ["Indelible"] = true
+    ["Tswift"] = true
   },
   testDungeonID = 1337,
   testDungeonName = "Indelible's Dungeon"

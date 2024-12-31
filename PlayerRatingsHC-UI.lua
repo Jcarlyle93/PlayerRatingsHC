@@ -81,9 +81,7 @@ addon.UI.UpdatePartyList = function(partyMembers)
   local yOffset = 0
   local memberCount = 0
   
-  print("Creating entries for players:") -- Debug
   for playerName in pairs(partyMembers) do
-    print("Creating for:", playerName) -- Debug
     local entry = CreatePlayerEntry(playerName)
     entry.frame:SetPoint("TOP", playerListContainer, "TOP", 0, yOffset)
     entry.frame:Show()
@@ -94,7 +92,6 @@ addon.UI.UpdatePartyList = function(partyMembers)
   
   local totalHeight = (memberCount * 35) + 100
   frame:SetHeight(math.max(180, totalHeight))
-  print("Created", memberCount, "entries") -- Debug
 end
 
 -- Main UI Display
@@ -155,8 +152,6 @@ GameTooltip:HookScript("OnTooltipSetUnit", function(self)
       fullName = name .. "-" .. currentRealm
     end
   end
-
-  print("Looking up rating for:", fullName)  -- Debug print
   
   if addon.DB and addon.DB.ratings then
     local ratingData = PlayerRatingsHCDB.ratings[fullName]
