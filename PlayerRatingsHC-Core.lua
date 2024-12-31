@@ -22,6 +22,7 @@ PlayerRatingsHCDB = PlayerRatingsHCDB or {
   checksumData = {},
   validationLog = {},
   outgoingRatings = {},
+  playerBewareList = {},
   version = 1
 }
 
@@ -29,6 +30,7 @@ PlayerRatingsHCDB.ratings = PlayerRatingsHCDB.ratings or {}
 PlayerRatingsHCDB.checksumData = PlayerRatingsHCDB.checksumData or {}
 PlayerRatingsHCDB.validationLog = PlayerRatingsHCDB.validationLog or {}
 PlayerRatingsHCDB.outgoingRatings = PlayerRatingsHCDB.outgoingRatings or {}
+PlayerRatingsHCDB.playerBewareList = PlayerRatingsHCDB.playerBewareList or {}
 
 addon.DB = PlayerRatingsHCDB
 
@@ -187,6 +189,54 @@ local function UpdatePartyMembers()
   end
 end
 
+local function CheckBewareList(playerName)
+  return PlayerRatingsHCDB.playerBewareList[playerName] ~= nil
+end
+
+local function CheckPartyForBewareList()
+  for i = 1, GetNumGroupMembers() do
+    local name = GetRaidRosterInfo(i)
+    if CheckBewareList(name) then
+      RaidWarningFrame_OnEvent(RaidWarningFrame, "CHAT_MSG_RAID_WARNING", 
+        format("WARNING: %s is on the player beware list!", name))
+    end
+  end
+end
+
+local function CanManageBewareList()
+  --local guildRank = select(1, GetGuildRankInfo(GetGuildRank()))
+  return true
+end
+
+local function AddToBewareList(playerName)
+  print("Adding to beware list:", playerName)
+  print("PlayerRatingsHCDB exists:", PlayerRatingsHCDB ~= nil)
+  print("playerBewareList exists:", PlayerRatingsHCDB.playerBewareList ~= nil)
+
+  if not PlayerRatingsHCDB.playerBewareList then
+    print("Creating new playerBewareList")
+    PlayerRatingsHCDB.playerBewareList = {}
+  end
+
+  if not CanManageBewareList() then 
+    return false 
+  end
+  
+  PlayerRatingsHCDB.playerBewareList[playerName] = {
+    addedBy = UnitName("player"),
+    timestamp = time()
+  }
+  
+  C_ChatInfo.SendAddonMessage(ADDON_MSG_PREFIX, "BEWARE_ADD:" .. playerName, "GUILD")
+  return true
+end
+
+local function RemoveFromBewareList(playerName)
+  if not CanManageBewareList() then return false end
+  PlayerRatingsHCDB.playerBewareList[playerName] = nil
+  return true
+end
+
 -- Event Frame setups
 local eventFrame = CreateFrame("Frame")
 eventFrame:RegisterEvent("ADDON_LOADED")
@@ -267,5 +317,8 @@ addon.Core = {
   end,
   GetCurrentDungeonID = function()
     return currentDungeonID or lastDungeonID 
-  end
+  end,
+  AddToBewareList = AddToBewareList,
+  RemoveFromBewareList = RemoveFromBewareList,
+  CanManageBewareList = CanManageBewareList
 }
