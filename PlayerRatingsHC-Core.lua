@@ -16,7 +16,6 @@ local TRANSFORM_KEYS = {
   TERTIARY = 0x6B4D8E2A
 }
 
--- Initialize DB at the start
 PlayerRatingsHCDB = PlayerRatingsHCDB or {
   ratings = {},
   checksumData = {},
@@ -110,7 +109,7 @@ local function VerifyRatingIntegrity(sender)
 
   local mainData = PlayerRatingsHCDB.ratings[sender]
   if not mainData then 
-    print("No main data found")
+    print("No main data found")  -- Debug
     return false 
   end
   
@@ -171,18 +170,18 @@ end
 
 local function UpdatePartyMembers()
   if not currentDungeonID then 
-    print("not in dungeon")
+    print("not in dungeon")  -- Debug
     return 
   end
 
   if IsInGroup() then
-    print("in group")
+    print("in group")  -- Debug
     for i = 1, GetNumGroupMembers() do
       local name = GetRaidRosterInfo(i)
       if name and name ~= UnitName("player") then
         if not string.find(name, "-") then
           local currentRealm = GetNormalizedRealmName()
-          print(name)
+          print(name)  -- Debug
           name = name .. "-" .. currentRealm
         end
 
@@ -215,12 +214,12 @@ local function CanManageBewareList()
 end
 
 local function AddToBewareList(playerName, note)
-  print("Adding to beware list:", playerName)
-  print("PlayerRatingsHCDB exists:", PlayerRatingsHCDB ~= nil)
-  print("playerBewareList exists:", PlayerRatingsHCDB.playerBewareList ~= nil)
+  print("Adding to beware list:", playerName) -- Debug
+  print("PlayerRatingsHCDB exists:", PlayerRatingsHCDB ~= nil) -- Debug
+  print("playerBewareList exists:", PlayerRatingsHCDB.playerBewareList ~= nil) -- Debug
 
   if not PlayerRatingsHCDB.playerBewareList then
-    print("Creating new playerBewareList")
+    print("Creating new playerBewareList")  -- Debug
     PlayerRatingsHCDB.playerBewareList = {}
   end
 
@@ -244,7 +243,6 @@ local function RemoveFromBewareList(playerName)
   return true
 end
 
--- Event Frame setups
 local eventFrame = CreateFrame("Frame")
 eventFrame:RegisterEvent("ADDON_LOADED")
 eventFrame:RegisterEvent("CHAT_MSG_ADDON")
@@ -258,7 +256,6 @@ C_ChatInfo.RegisterAddonMessagePrefix(ADDON_MSG_PREFIX)
 
 eventFrame:SetScript("OnEvent", function(self, event, ...)
   if event == "ADDON_LOADED" and ... == addonName then
-    -- DB is already initialized at file start
   elseif event == "CHAT_MSG_ADDON" then
     local prefix, message, channel, sender = ...
     if prefix == ADDON_MSG_PREFIX then
@@ -277,12 +274,12 @@ eventFrame:SetScript("OnEvent", function(self, event, ...)
       if currentDungeonID ~= instanceID then
         currentDungeonID = instanceID
         currentDungeonName = name
-        print("Entered Dungeon", name, "ID:", instanceID)
+        print("Entered Dungeon", name, "ID:", instanceID)  -- Debug
       end
     else
       inDungeon = false
       if wasInDungeon then
-        print("Left Dungeon", currentDungeonName, currentDungeonID or "unknown")
+        print("Left Dungeon", currentDungeonName, currentDungeonID or "unknown") -- Debug
         lastDungeonID = currentDungeonID
         lastDungeonName = currentDungeonName
         addon.Core.UpdateDungeonInfo(lastDungeonName, lastDungeonID)
@@ -294,16 +291,15 @@ eventFrame:SetScript("OnEvent", function(self, event, ...)
   end
 end)
 
--- Expose necessary functions to addon namespace
 addon.Core = {
   SendRating = function(targetPlayer, isPositive)
     local dungeonID = currentDungeonID or lastDungeonID
     if not dungeonID then
-      print("Error: No dungeon ID available")
+      print("Error: No dungeon ID available")  -- Debug
       return
     end
     if HasRatedPlayerForDungeon(targetPlayer, dungeonID) then
-      print("You have already rated " .. targetPlayer .. " for this dungeon")
+      print("You have already rated " .. targetPlayer .. " for this dungeon")  -- Debug
       return
     end
     local rating = isPositive and 1 or -1

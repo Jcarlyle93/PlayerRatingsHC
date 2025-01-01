@@ -11,7 +11,6 @@ local playerListContainer = CreateFrame("Frame", nil, frame, "BackdropTemplate")
 playerListContainer:SetPoint("TOP", separator, "BOTTOM", 0, -10)
 playerListContainer:SetSize(250, 180)
 
--- if user has been rated, then disable checkboxes.
 local function UpdateRatingState(playerName)
   if addon.Core.HasRatedPlayerForDungeon and addon.Core.GetCurrentDungeonID then
     local dungeonID = addon.Core.GetCurrentDungeonID()
@@ -94,7 +93,6 @@ addon.UI.UpdatePartyList = function(partyMembers)
   frame:SetHeight(math.max(180, totalHeight))
 end
 
--- Main UI Display
 frame:SetSize(330, 180)
 frame:SetPoint("CENTER")
 frame:SetMovable(true)
@@ -135,7 +133,6 @@ frame:SetScript("OnMouseUp", function(self, button)
   end
 end)
 
--- Exit Button
 closeButton:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -3, -1)
 closeButton:SetScript("OnClick", function()
   frame:Hide()
@@ -148,7 +145,7 @@ GameTooltip:HookScript("OnTooltipSetUnit", function(self)
   local fullName = name
   if unit then
     local currentRealm = GetNormalizedRealmName()
-    if not string.find(name, "-") then  -- If name doesn't already include realm
+    if not string.find(name, "-") then
       fullName = name .. "-" .. currentRealm
     end
   end
@@ -167,7 +164,7 @@ end)
 
 frame:SetScript("OnShow", function()
   local dungeonID = addon.Core.GetCurrentDungeonID()
-  print("Current dungeon ID from Core:", dungeonID)
+  print("Current dungeon ID from Core:", dungeonID)  -- Debug
   UpdateRatingState(playerName)
 end)
 

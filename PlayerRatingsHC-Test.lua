@@ -1,7 +1,7 @@
 local addonName, addon = ...
 
 if not addon then
-  print("Test file error: addon namespace not available")
+  print("Test file error: addon namespace not available")  -- Debug
   return
 end
 
@@ -9,10 +9,10 @@ local function NormalizeTestName(name)
   if not string.find(name, "-") then
     local realm = GetNormalizedRealmName()
     if realm then
-      print("Adding realm to", name, ":", realm)  -- Debug print
+      print("Adding realm to", name, ":", realm)  -- Debug
       return name .. "-" .. realm
     else
-      print("Warning: Could not get realm name for", name)  -- Debug print
+      print("Warning: Could not get realm name for", name)  -- Debug
       return name
     end
   end
@@ -39,19 +39,19 @@ local function RunFullTest()
   addon.UI.mainFrame:Show()
  end
 
-print("Test data initialized")
+print("Test data initialized")  -- Debug
 
 SLASH_PRATINGTEST1 = "/prtest"
 SlashCmdList["PRATINGTEST"] = function(msg)
   if msg == "full" then
-    print("Running full test scenario")
+    print("Running full test scenario")  -- Debug
     RunFullTest()
   elseif msg == "party" then
     addon.UI.UpdatePartyList(testData.testParty)
     addon.Core.UpdateDungeonInfo(testData.testDungeonName, testData.testDungeonID)
     addon.UI.mainFrame:Show()
   else
-  print("Running full test scenario")
+  print("Running full test scenario")  -- Debug
     RunFullTest()
   end
 end

@@ -53,94 +53,117 @@ local function HideNotePanel()
 end
 
 local function CreateNotePanel(frame, playerName, noteText)
-    local panel = CreateFrame("Frame", nil, frame, "BackdropTemplate")
-    panel:SetSize(290, frame:GetHeight() - 20)
-    panel:SetPoint("RIGHT", frame, "RIGHT", -10, 0)
-    panel:SetBackdrop(BACKDROP_SECONDARY)
-    panel:SetBackdropColor(0, 0, 0, 0.5)
+  bewareUI.currentNoteEntry = currentEntry
+    
+  local panel = CreateFrame("Frame", nil, frame, "BackdropTemplate")
+  panel:SetSize(290, frame:GetHeight() - 20)
+  panel:SetPoint("RIGHT", frame, "RIGHT", -10, 0)
+  panel:SetBackdrop(BACKDROP_SECONDARY)
+  panel:SetBackdropColor(0, 0, 0, 0.5)
 
-    local title = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    title:SetPoint("TOPLEFT", 10, -10)
-    title:SetText(format("Notes for %s", playerName))
+  local title = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+  title:SetPoint("TOPLEFT", 10, -10)
+  title:SetText(format("Notes for %s", playerName))
 
-    local text = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    text:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -10)
-    text:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", -10, 10)
-    text:SetText(noteText)
-    text:SetJustifyH("LEFT")
-    text:SetJustifyV("TOP")
-    text:SetWordWrap(true)
+  local text = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+  text:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -10)
+  text:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", -10, 10)
+  text:SetText(noteText)
+  text:SetJustifyH("LEFT")
+  text:SetJustifyV("TOP")
+  text:SetWordWrap(true)
 
-    return panel
+  return panel
 end
 
 local function UpdateBewareList()
-    local listFrame = bewareUI.listContentFrame
-    if not listFrame then return end
+  local listFrame = bewareUI.listContentFrame
+  if not listFrame then return end
 
-    local children = {listFrame:GetChildren()}
-    for i = 1, #children do
-        children[i]:Hide()
-        children[i]:SetParent(nil)
-    end
+  local activeNotePlayerName = nil
+  if bewareUI.activeNotePanel then
+      activeNotePlayerName = bewareUI.activeNotePanel.playerName
+  end
 
-    local yOffset = -SPACING
-    for playerName, data in pairs(PlayerRatingsHCDB.playerBewareList) do
-        local entry = CreateFrame("Frame", nil, listFrame, "BackdropTemplate")
-        entry:SetSize(230, ENTRY_HEIGHT)
-        entry:SetPoint("TOP", 0, yOffset)
+  local children = {listFrame:GetChildren()}
+  for i = 1, #children do
+      children[i]:Hide()
+      children[i]:SetParent(nil)
+  end
 
-        local nameText = entry:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-        nameText:SetPoint("LEFT", SPACING, 0)
-        nameText:SetText(playerName)
+  local yOffset = -SPACING
+  for playerName, data in pairs(PlayerRatingsHCDB.playerBewareList) do
+    local entry = CreateFrame("Frame", nil, listFrame, "BackdropTemplate")
+    entry:SetSize(230, ENTRY_HEIGHT)
+    entry:SetPoint("TOP", 0, yOffset)
 
-        local addedByText = entry:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-        addedByText:SetPoint("RIGHT", -25, 0)
-        addedByText:SetText(format("Added by: %s", data.addedBy))
+    local nameText = entry:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    nameText:SetPoint("LEFT", SPACING, 0)
+    nameText:SetText(playerName)
 
-        if data.note and data.note ~= "" then
-            local noteButton = CreateFrame("Button", nil, entry)
-            noteButton:SetSize(16, 16)
-            noteButton:SetPoint("LEFT", nameText, "RIGHT", 0, 0)
-            noteButton:SetNormalTexture("Interface/Buttons/UI-GuildButton-PublicNote-Up")
+    if data.note and data.note ~= "" then
+      local noteButton = CreateFrame("Button", nil, entry)
+      noteButton:SetSize(16, 16)
+      noteButton:SetPoint("LEFT", nameText, "RIGHT", 0, 0)
+      noteButton:SetNormalTexture("Interface/Buttons/UI-GuildButton-PublicNote-Up")
+      entry.noteButton = noteButton
 
-            noteButton:SetScript("OnClick", function()
-                if bewareUI.frame:GetWidth() == FRAME_WIDTH then
-                    bewareUI.frame:SetWidth(FRAME_WIDTH_EXPANDED)
-                    bewareUI.frame:ClearAllPoints()
-                    bewareUI.frame:SetPoint("LEFT", UIParent, "CENTER", -150, 0)
-
-                    HideNotePanel()
-                    bewareUI.activeNotePanel = CreateNotePanel(bewareUI.frame, playerName, data.note)
-                    bewareUI.activeNotePanel:Show()
-                else
-                    bewareUI.frame:SetWidth(FRAME_WIDTH)
-                    bewareUI.frame:ClearAllPoints()
-                    bewareUI.frame:SetPoint("CENTER")
-                    HideNotePanel()
-                end
-            end)
-
-            noteButton:SetScript("OnEnter", function(self)
-                GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-                GameTooltip:SetText("Click to view notes")
-                GameTooltip:Show()
-            end)
-            noteButton:SetScript("OnLeave", GameTooltip.Hide)
+      noteButton:SetScript("OnClick", function()
+        local currentWidth = math.floor(bewareUI.frame:GetWidth() + 0.5)
+      
+        if currentWidth <= FRAME_WIDTH + 1 then
+          bewareUI.frame:SetWidth(FRAME_WIDTH_EXPANDED)
+          
+          if bewareUI.activeNotePanel then
+            bewareUI.activeNotePanel:Hide()
+          end
+      
+          local notePanel = CreateFrame("Frame", nil, bewareUI.frame, "BackdropTemplate")
+          notePanel.playerName = playerName 
+          notePanel:SetSize(290, bewareUI.frame:GetHeight() - 20)
+          notePanel:SetPoint("RIGHT", bewareUI.frame, "RIGHT", -10, 0)
+          notePanel:SetBackdrop(BACKDROP_SECONDARY)
+          notePanel:SetBackdropColor(0, 0, 0, 0.5)
+      
+          local notePanelTitle = notePanel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+          notePanelTitle:SetPoint("TOPLEFT", 10, -10)
+          notePanelTitle:SetText(format("Notes for %s", playerName))
+      
+          local noteText = notePanel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+          noteText:SetPoint("TOPLEFT", notePanelTitle, "BOTTOMLEFT", 0, -10)
+          noteText:SetPoint("BOTTOMRIGHT", notePanel, "BOTTOMRIGHT", -10, 10)
+          noteText:SetText(data.note)
+          noteText:SetJustifyH("LEFT")
+          noteText:SetJustifyV("TOP")
+          noteText:SetWordWrap(true)
+      
+          bewareUI.activeNotePanel = notePanel
+          bewareUI.activeNotePanel:Show()
+        else
+          bewareUI.frame:SetWidth(FRAME_WIDTH)
+          if bewareUI.activeNotePanel then
+            bewareUI.activeNotePanel:Hide()
+            bewareUI.activeNotePanel = nil
+          end
         end
+      end)
 
-        local removeButton = CreateFrame("Button", nil, entry)
-        removeButton:SetSize(16, 16)
-        removeButton:SetPoint("RIGHT", -SPACING, 0)
-        removeButton:SetNormalTexture("Interface\\Buttons\\UI-MinusButton-Up")
-        removeButton:SetScript("OnClick", function()
-            if addon.Core.RemoveFromBewareList(playerName) then
-                UpdateBewareList()
-            end
-        end)
-
-        yOffset = yOffset - 30
+      noteButton:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:SetText("Click to view notes")
+        GameTooltip:Show()
+      end)
+      noteButton:SetScript("OnLeave", function(self)
+        GameTooltip:Hide()
+      end)
     end
+
+    local addedByText = entry:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    addedByText:SetPoint("RIGHT", -25, 0)
+    addedByText:SetText(format("Added by: %s", data.addedBy))
+    
+    yOffset = yOffset - 30
+  end
 end
 
 local function CreateBewareListUI()
@@ -153,43 +176,48 @@ local function CreateBewareListUI()
   frame:SetClampedToScreen(true)
   frame:SetBackdrop(BACKDROP_MAIN)
   frame:SetBackdropColor(0, 0, 0, 0.8)
-
+ 
   frame:SetScript("OnMouseDown", function(self, button)
-      if button == "LeftButton" then self:StartMoving() end
+    if button == "LeftButton" then self:StartMoving() end
   end)
-
+ 
   frame:SetScript("OnMouseUp", function(self, button)
-      if button == "LeftButton" then self:StopMovingOrSizing() end
+    if button == "LeftButton" then self:StopMovingOrSizing() end
   end)
-
-  local title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+ 
+  local mainContentPanel = CreateFrame("Frame", nil, frame)
+  mainContentPanel:SetSize(FRAME_WIDTH - 20, FRAME_HEIGHT - 20)
+  mainContentPanel:SetPoint("LEFT", frame, "LEFT", 10, 0)
+  bewareUI.mainContentPanel = mainContentPanel
+ 
+  local title = mainContentPanel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
   bewareUI.title = title
-  title:SetPoint("TOP", 0, -10)
+  title:SetPoint("TOP", mainContentPanel, "TOP", 0, -10)
   title:SetText("Player Beware List")
 
-  local nameBox = CreateFrame("EditBox", nil, frame, "InputBoxTemplate")
+  local nameBox = CreateFrame("EditBox", nil, mainContentPanel, "InputBoxTemplate")
   bewareUI.nameBox = nameBox
   nameBox:SetSize(200, 20)
   nameBox:SetPoint("TOP", title, "BOTTOM", 0, -20)
   nameBox:SetAutoFocus(false)
 
-  local noteLabel = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+  local noteLabel = mainContentPanel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
   bewareUI.noteLabel = noteLabel
   noteLabel:SetPoint("TOP", nameBox, "BOTTOM", 0, -10)
   noteLabel:SetText("Note (optional, max 150):")
-
-  local charCounter = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+ 
+  local charCounter = mainContentPanel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
   bewareUI.charCounter = charCounter
   charCounter:SetPoint("TOPRIGHT", nameBox, "BOTTOMRIGHT", 0, -10)
   charCounter:SetText("150")
 
-  local noteBoxBackground = CreateFrame("Frame", nil, frame, "BackdropTemplate")
+  local noteBoxBackground = CreateFrame("Frame", nil, mainContentPanel, "BackdropTemplate")
   bewareUI.noteBoxBackground = noteBoxBackground
   noteBoxBackground:SetSize(200, 60)
   noteBoxBackground:SetPoint("TOP", noteLabel, "BOTTOM", 0, -5)
   noteBoxBackground:SetBackdrop(BACKDROP_SECONDARY)
   noteBoxBackground:SetBackdropColor(0, 0, 0, 0.5)
-
+ 
   local noteBox = CreateFrame("EditBox", nil, noteBoxBackground)
   bewareUI.noteBox = noteBox
   noteBox:SetMultiLine(true)
@@ -202,58 +230,57 @@ local function CreateBewareListUI()
   noteBox:EnableMouse(true)
   noteBox:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
   noteBox:SetScript("OnTextChanged", function(self)
-      charCounter:SetText(150 - strlen(self:GetText()))
+    charCounter:SetText(150 - strlen(self:GetText()))
   end)
 
-  -- Add Button
-  local addButton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
+  local addButton = CreateFrame("Button", nil, mainContentPanel, "UIPanelButtonTemplate")
   bewareUI.addButton = addButton
   addButton:SetSize(80, 25)
   addButton:SetPoint("TOP", noteBox, "BOTTOM", 0, -5)
   addButton:SetText("Add")
   addButton:SetScript("OnClick", function()
-      local name = nameBox:GetText()
-      local note = noteBox:GetText()
-      if name and name ~= "" then
-          if addon.Core.AddToBewareList(name, note) then
-              nameBox:SetText("")
-              noteBox:SetText("")
-              UpdateBewareList()
-          end
+    local name = nameBox:GetText()
+    local note = noteBox:GetText()
+    if name and name ~= "" then
+      if addon.Core.AddToBewareList(name, note) then
+        nameBox:SetText("")
+        noteBox:SetText("")
+        UpdateBewareList()
       end
+    end
   end)
 
-  -- Scroll Frame
-  local scrollFrame = CreateFrame("ScrollFrame", nil, frame, "UIPanelScrollFrameTemplate")
+  local scrollFrame = CreateFrame("ScrollFrame", nil, mainContentPanel, "UIPanelScrollFrameTemplate")
   bewareUI.scrollFrame = scrollFrame
   scrollFrame:SetSize(230, 280)
   scrollFrame:SetPoint("TOP", addButton, "BOTTOM", 0, -10)
 
-  -- Close Button
-  local closeButton = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
-  bewareUI.closeButton = closeButton
-  closeButton:SetPoint("TOPRIGHT", -3, -3)
-  closeButton:SetScript("OnClick", function() 
-      frame:Hide()
-      HideNotePanel()
-  end)
-
-  -- List Content Frame
   bewareUI.listContentFrame = CreateFrame("Frame", nil, scrollFrame)
   bewareUI.listContentFrame:SetSize(230, 280)
   scrollFrame:SetScrollChild(bewareUI.listContentFrame)
-
-  -- Frame Scripts
+ 
+  local closeButton = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
+  bewareUI.closeButton = closeButton
+  closeButton:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -3, -3)
+  closeButton:SetScript("OnClick", function() 
+    frame:Hide()
+    if bewareUI.activeNotePanel then
+      bewareUI.activeNotePanel:Hide()
+    end
+  end)
+ 
   frame:SetScript("OnHide", function()
-      frame:EnableMouse(false)
-      HideNotePanel()
+    frame:EnableMouse(false)
+    if bewareUI.activeNotePanel then
+      bewareUI.activeNotePanel:Hide()
+    end
   end)
-
+ 
   frame:SetScript("OnShow", function()
-      frame:EnableMouse(true)
-      UpdateBewareList()
+    frame:EnableMouse(true)
+    UpdateBewareList()
   end)
-
+ 
   frame:Hide()
   return frame
 end
