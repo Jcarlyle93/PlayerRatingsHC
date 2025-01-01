@@ -218,19 +218,46 @@ local function AddToBewareList(playerName, note)
   print("PlayerRatingsHCDB exists:", PlayerRatingsHCDB ~= nil) -- Debug
   print("playerBewareList exists:", PlayerRatingsHCDB.playerBewareList ~= nil) -- Debug
 
+  if not playerName or playerName == "" then
+    return false
+  end
+
+  playerName = playerName:gsub("^%a", string.upper)
+
   if not PlayerRatingsHCDB.playerBewareList then
     print("Creating new playerBewareList")  -- Debug
     PlayerRatingsHCDB.playerBewareList = {}
   end
 
+  if PlayerRatingsHCDB.playerBewareList[playerName] then
+    if note and note ~= "" then
+      if not PlayerRatingsHCDB.playerBewareList[playerName] then
+        PlayerRatingsHCDB.playerBewareList[playerName].note = {}
+      end
+      table.insert(PlayerRatingsHCDB.playerBewareList[playerName].notes, {
+        addedBy = UnitName("player"),
+        text = note,
+        timestamp = time()
+      })
+    end
+    return true
+  end
+
+  -- We might change this so only officers can manage, this is why for now this just returns true
   if not CanManageBewareList() then 
-    return false 
+    return true 
   end
   
   PlayerRatingsHCDB.playerBewareList[playerName] = {
     addedBy = UnitName("player"),
     timestamp = time(),
-    note = note or ""
+    notes = note and note ~= "" and {
+      {
+        addedBy = UnitName("player"),
+        text = note,
+        timestamp = time()
+      }
+    } or {}
   }
   
   C_ChatInfo.SendAddonMessage(ADDON_MSG_PREFIX, "BEWARE_ADD:" .. playerName, "GUILD")
