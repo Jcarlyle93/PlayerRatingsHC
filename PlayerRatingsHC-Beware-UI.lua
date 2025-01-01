@@ -120,17 +120,17 @@ local function UpdateBewareList()
       
           local notePanel = CreateFrame("Frame", nil, bewareUI.frame, "BackdropTemplate")
           notePanel.playerName = playerName 
-          notePanel:SetSize(290, bewareUI.frame:GetHeight() - 20)
-          notePanel:SetPoint("RIGHT", bewareUI.frame, "RIGHT", -10, 0)
+          notePanel:SetSize(290, bewareUI.frame:GetHeight() - 40)
+          notePanel:SetPoint("BOTTOMRIGHT", bewareUI.frame, "BOTTOMRIGHT", -10, 10)
           notePanel:SetBackdrop(BACKDROP_SECONDARY)
           notePanel:SetBackdropColor(0, 0, 0, 0.5)
       
           local notePanelTitle = notePanel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-          notePanelTitle:SetPoint("TOPLEFT", 10, -10)
+          notePanelTitle:SetPoint("BOTTOMLEFT", notePanel, "TOPLEFT", 10, 5)
           notePanelTitle:SetText(format("Notes for %s", playerName))
       
           local noteText = notePanel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-          noteText:SetPoint("TOPLEFT", notePanelTitle, "BOTTOMLEFT", 0, -10)
+          noteText:SetPoint("TOPLEFT", notePanelTitle, "BOTTOMLEFT", 10, -20)
           noteText:SetPoint("BOTTOMRIGHT", notePanel, "BOTTOMRIGHT", -10, 10)
           noteText:SetText(data.note)
           noteText:SetJustifyH("LEFT")
@@ -252,7 +252,7 @@ local function CreateBewareListUI()
 
   local scrollFrame = CreateFrame("ScrollFrame", nil, mainContentPanel, "UIPanelScrollFrameTemplate")
   bewareUI.scrollFrame = scrollFrame
-  scrollFrame:SetSize(230, 280)
+  scrollFrame:SetSize(230, 190)
   scrollFrame:SetPoint("TOP", addButton, "BOTTOM", 0, -10)
 
   bewareUI.listContentFrame = CreateFrame("Frame", nil, scrollFrame)
