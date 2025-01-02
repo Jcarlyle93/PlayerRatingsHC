@@ -224,18 +224,19 @@ local function CreateBewareListUI()
   title:SetText("Player Beware List")
 
   local nameLabel = mainContentPanel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-  nameLabel:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -20) 
+  bewareUI.nameLabel = nameLabel
+  nameLabel:SetPoint("TOP", title, "TOP", 0, -20) 
   nameLabel:SetText("Player Name:")
 
   local nameBox = CreateFrame("EditBox", nil, mainContentPanel, "InputBoxTemplate")
   bewareUI.nameBox = nameBox
-  nameBox:SetSize(200, 20)
+  nameBox:SetSize(230, 20)
   nameBox:SetPoint("TOP", nameLabel, "BOTTOM", 0, -5)
   nameBox:SetAutoFocus(false)
 
   local noteLabel = mainContentPanel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
   bewareUI.noteLabel = noteLabel
-  noteLabel:SetPoint("TOP", nameBox, "BOTTOM", 0, -10)
+  noteLabel:SetPoint("TOPLEFT", nameBox, "BOTTOMLEFT", 0, -10)
   noteLabel:SetText("Note (optional, max 150):")
  
   local charCounter = mainContentPanel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
@@ -245,8 +246,8 @@ local function CreateBewareListUI()
 
   local noteBoxBackground = CreateFrame("Frame", nil, mainContentPanel, "BackdropTemplate")
   bewareUI.noteBoxBackground = noteBoxBackground
-  noteBoxBackground:SetSize(200, 60)
-  noteBoxBackground:SetPoint("TOP", noteLabel, "BOTTOM", 0, -5)
+  noteBoxBackground:SetSize(230, 60)
+  noteBoxBackground:SetPoint("TOPLEFT", noteLabel, "BOTTOMLEFT", 0, -5)
   noteBoxBackground:SetBackdrop(BACKDROP_SECONDARY)
   noteBoxBackground:SetBackdropColor(0, 0, 0, 0.5)
  
@@ -255,14 +256,14 @@ local function CreateBewareListUI()
   noteBox:SetMultiLine(true)
   noteBox:SetMaxLetters(150)
   noteBox:SetFontObject("GameFontNormal")
-  noteBox:SetSize(200, 50)
+  noteBox:SetSize(230, 50)
   noteBox:SetPoint("TOPLEFT", noteBoxBackground, "TOPLEFT", 5, -5)
   noteBox:SetPoint("BOTTOMRIGHT", noteBoxBackground, "BOTTOMRIGHT", -5, 5)
   noteBox:SetAutoFocus(false)
   noteBox:EnableMouse(true)
   noteBox:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
   noteBox:SetScript("OnTextChanged", function(self)
-    charCounter:SetText(150 - strlen(self:GetText()))
+    charCounter:SetText(150 - strlen(self:GetText()) .. " Remaning")
   end)
 
   local addButton = CreateFrame("Button", nil, mainContentPanel, "UIPanelButtonTemplate")
@@ -284,7 +285,7 @@ local function CreateBewareListUI()
 
   local scrollFrame = CreateFrame("ScrollFrame", nil, mainContentPanel, "UIPanelScrollFrameTemplate")
   bewareUI.scrollFrame = scrollFrame
-  scrollFrame:SetSize(230, 190)
+  scrollFrame:SetSize(230, 180)
   scrollFrame:SetPoint("TOP", addButton, "BOTTOM", 0, -10)
 
   bewareUI.listContentFrame = CreateFrame("Frame", nil, scrollFrame)
