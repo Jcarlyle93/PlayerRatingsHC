@@ -5,6 +5,7 @@ local MSG_TYPE_RATING = "RATE"
 local currentDungeonID = nil
 local inDungeon = false
 local partyMembers = {}
+local inCombat = false
 
 local SECURITY_KEYS = {
   "hK9$mP2#", "jL5*nQ7@", "rT3&vW4!", "xY8%zA6#" 
@@ -208,6 +209,19 @@ local function CheckPartyForBewareList()
   end
 end
 
+local function CheckTargetBewareStatus()
+  local target = GetUnitName("target")
+  if target and PlayerRatingsHCDB.playerBewareList[target] then
+    RaidNotice_AddMessage(RaidWarningFrame, 
+    "|TInterface\\TargetingFrame\\UI-RaidTargetingIcon_7:0|t " .. 
+    target .. 
+    " in on the guild beware list!" ..
+    "|TInterface\\TargetingFrame\\UI-RaidTargetingIcon_7:0|t",
+    ChatTypeInfo["RAID_WARNING"])
+    PlaySound(8959)
+  end
+end
+
 local function CanManageBewareList()
   --local guildRank = select(1, GetGuildRankInfo(GetGuildRank()))
   return true
@@ -270,6 +284,21 @@ local function RemoveFromBewareList(playerName)
   return true
 end
 
+local function RemoveNote(playerName, noteToRemove)
+  if PlayerRatingsHCDB.playerBewareList[playerName] and PlayerRatingsHCDB.playerBewareList[playerName].notes then
+    local notes = PlayerRatingsHCDB.playerBewareList[playerName].notes
+    for i, note in ipairs(notes) do
+      if note.addedBy == noteToRemove.addedBy and note.text == noteToRemove.text then
+        table.remove(notes, i)
+        break
+      end
+    end
+    if #notes == 0 then
+      PlayerRatingsHCDB.playerBewareList[playerName].notes = {}
+    end
+  end
+end
+
 local eventFrame = CreateFrame("Frame")
 eventFrame:RegisterEvent("ADDON_LOADED")
 eventFrame:RegisterEvent("CHAT_MSG_ADDON")
@@ -278,6 +307,9 @@ eventFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
 eventFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
 eventFrame:RegisterEvent("PARTY_MEMBER_ENABLE")
 eventFrame:RegisterEvent("PARTY_MEMBER_DISABLE")
+eventFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
+eventFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
+eventFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
 
 C_ChatInfo.RegisterAddonMessagePrefix(ADDON_MSG_PREFIX)
 
@@ -315,6 +347,15 @@ eventFrame:SetScript("OnEvent", function(self, event, ...)
         currentDungeonName = nil    
       end
     end
+  elseif event == "PLAYER_TARGET_CHANGED" then
+    CheckTargetBewareStatus()
+  elseif event == "PLAYER_REGEN_DISABLED" then
+    inCombat = true
+    if addon.bewareFrame and addon.bewareFrame:IsShown() then
+      addon.bewareFrame:Hide()
+    end
+  elseif event == "PLAYER_REGEN_ENABLED" then
+    inCombat = false
   end
 end)
 
@@ -350,5 +391,6 @@ addon.Core = {
   end,
   AddToBewareList = AddToBewareList,
   RemoveFromBewareList = RemoveFromBewareList,
-  CanManageBewareList = CanManageBewareList
+  CanManageBewareList = CanManageBewareList,
+  RemoveNote = RemoveNote
 }

@@ -146,7 +146,7 @@ local function UpdateBewareList()
             
             local noteText = noteContainer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
             noteText:SetPoint("TOPLEFT")
-            noteText:SetPoint("TOPRIGHT")
+            noteText:SetPoint("TOPRIGHT", -25, 0)
             noteText:SetText(noteData.text)
             noteText:SetJustifyH("LEFT")
             noteText:SetWordWrap(true)
@@ -155,6 +155,33 @@ local function UpdateBewareList()
             addedBy:SetPoint("TOPLEFT", noteText, "BOTTOMLEFT", 0, -2)
             addedBy:SetText(format("Added by: %s", noteData.addedBy))
             addedBy:SetTextColor(0.7, 0.7, 0.7)
+
+            if noteData.addedBy == UnitName("player") then
+              local removeButton = CreateFrame("Button", nil, noteContainer)
+              removeButton:SetSize(16, 16)
+              removeButton:SetPoint("RIGHT", -5, 0)
+              removeButton:SetNormalTexture("Interface/Buttons/UI-StopButton")
+              removeButton:SetScript("OnClick", function()
+                StaticPopupDialogs["CONFIRM_REMOVE_NOTE"] = {
+                  text = "Are you sure you want to remove this note?",
+                  button1 = "Yes",
+                  button2 = "No",
+                  OnAccept = function()
+                    -- Remove this specific note
+                    addon.Core.RemoveNote(playerName, noteData)
+                    -- Refresh the note panel
+                    bewareUI.activeNotePanel:Hide()
+                    bewareUI.activeNotePanel = nil
+                    noteButton:GetScript("OnClick")()
+                  end,
+                  timeout = 0,
+                  whileDead = true,
+                  hideOnEscape = true,
+                  preferredIndex = 3,
+                }
+                StaticPopup_Show("CONFIRM_REMOVE_NOTE")
+              end)
+            end
             
             yOffset = yOffset - 50
           end
@@ -173,9 +200,26 @@ local function UpdateBewareList()
       end)
     end
 
-    local addedByText = entry:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    addedByText:SetPoint("RIGHT", -25, 0)
-    addedByText:SetText(format("Added by: %s", data.addedBy))
+    local removeButton = CreateFrame("Button", nil, entry)
+    removeButton:SetSize(16, 16)
+    removeButton:SetPoint("RIGHT", -5, 0)
+    removeButton:SetNormalTexture("Interface/Buttons/UI-StopButton")
+    removeButton:SetScript("OnClick", function()
+      StaticPopupDialogs["CONFIRM_REMOVE_PLAYER"] = {
+        text = "Are you sure you want to remove " .. playerName .. " from the beware list?",
+        button1 = "Yes",
+        button2 = "No",
+        OnAccept = function()
+          PlayerRatingsHCDB.playerBewareList[playerName] = nil
+          UpdateBewareList()
+        end,
+        timeout = 0,
+        whileDead = true,
+        hideOnEscape = true,
+        preferredIndex = 3,
+      }
+      StaticPopup_Show("CONFIRM_REMOVE_PLAYER")
+    end)
     
     yOffset = yOffset - 30
   end
@@ -210,15 +254,20 @@ local function CreateBewareListUI()
   title:SetPoint("TOP", mainContentPanel, "TOP", 0, -10)
   title:SetText("Player Beware List")
 
+  local nameLabel = mainContentPanel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+  bewareUI.nameLabel = nameLabel
+  nameLabel:SetPoint("TOP", title, "TOP", 0, -20) 
+  nameLabel:SetText("Player Name:")
+
   local nameBox = CreateFrame("EditBox", nil, mainContentPanel, "InputBoxTemplate")
   bewareUI.nameBox = nameBox
-  nameBox:SetSize(200, 20)
-  nameBox:SetPoint("TOP", title, "BOTTOM", 0, -20)
+  nameBox:SetSize(230, 20)
+  nameBox:SetPoint("TOP", nameLabel, "BOTTOM", 0, -5)
   nameBox:SetAutoFocus(false)
 
   local noteLabel = mainContentPanel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
   bewareUI.noteLabel = noteLabel
-  noteLabel:SetPoint("TOP", nameBox, "BOTTOM", 0, -10)
+  noteLabel:SetPoint("TOPLEFT", nameBox, "BOTTOMLEFT", 0, -10)
   noteLabel:SetText("Note (optional, max 150):")
  
   local charCounter = mainContentPanel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
@@ -228,8 +277,8 @@ local function CreateBewareListUI()
 
   local noteBoxBackground = CreateFrame("Frame", nil, mainContentPanel, "BackdropTemplate")
   bewareUI.noteBoxBackground = noteBoxBackground
-  noteBoxBackground:SetSize(200, 60)
-  noteBoxBackground:SetPoint("TOP", noteLabel, "BOTTOM", 0, -5)
+  noteBoxBackground:SetSize(230, 60)
+  noteBoxBackground:SetPoint("TOPLEFT", noteLabel, "BOTTOMLEFT", 0, -5)
   noteBoxBackground:SetBackdrop(BACKDROP_SECONDARY)
   noteBoxBackground:SetBackdropColor(0, 0, 0, 0.5)
  
@@ -238,14 +287,14 @@ local function CreateBewareListUI()
   noteBox:SetMultiLine(true)
   noteBox:SetMaxLetters(150)
   noteBox:SetFontObject("GameFontNormal")
-  noteBox:SetSize(200, 50)
+  noteBox:SetSize(230, 50)
   noteBox:SetPoint("TOPLEFT", noteBoxBackground, "TOPLEFT", 5, -5)
   noteBox:SetPoint("BOTTOMRIGHT", noteBoxBackground, "BOTTOMRIGHT", -5, 5)
   noteBox:SetAutoFocus(false)
   noteBox:EnableMouse(true)
   noteBox:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
   noteBox:SetScript("OnTextChanged", function(self)
-    charCounter:SetText(150 - strlen(self:GetText()))
+    charCounter:SetText(150 - strlen(self:GetText()) .. " Remaning")
   end)
 
   local addButton = CreateFrame("Button", nil, mainContentPanel, "UIPanelButtonTemplate")
@@ -267,7 +316,7 @@ local function CreateBewareListUI()
 
   local scrollFrame = CreateFrame("ScrollFrame", nil, mainContentPanel, "UIPanelScrollFrameTemplate")
   bewareUI.scrollFrame = scrollFrame
-  scrollFrame:SetSize(230, 190)
+  scrollFrame:SetSize(230, 180)
   scrollFrame:SetPoint("TOP", addButton, "BOTTOM", 0, -10)
 
   bewareUI.listContentFrame = CreateFrame("Frame", nil, scrollFrame)
