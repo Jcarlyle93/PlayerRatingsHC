@@ -3,9 +3,9 @@
 ## Notes: Rating system for HC WoW PlayerRatingsHC
 ## SavedVariablesPerCharacter: PlayerRatingsHCDB
 ## Author: indelible @ Discord
-## Version: Alpha
+## Version: @project-version@
 
 PlayerRatingsHC-Core.lua
 PlayerRatingsHC-UI.lua
 PlayerRatingsHC-Beware-UI.lua
-PlayerRatingsHC-Test.lua
+## PlayerRatingsHC-Test.lua

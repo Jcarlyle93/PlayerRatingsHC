@@ -1,0 +1,12 @@
+package-as: PlayerRatingsHC
+enable-nolib-creation: no
+
+ignore:
+  - README.md
+  - .git
+  - .github
+  - PlayerRatingsHC-Test.lua
+
+license-output: LICENSE.txt
+
+manual-changelog: CHANGELOG.txt
