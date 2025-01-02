@@ -159,13 +159,27 @@ local function UpdateBewareList()
             if noteData.addedBy == UnitName("player") then
               local removeButton = CreateFrame("Button", nil, noteContainer)
               removeButton:SetSize(16, 16)
-              removeButton:SetPoint("RIGHT", 0, 0)
+              removeButton:SetPoint("RIGHT", -5, 0)
               removeButton:SetNormalTexture("Interface/Buttons/UI-StopButton")
               removeButton:SetScript("OnClick", function()
-                addon.Core.RemoveNote(playerName, noteData)
-                bewareUI.activeNotePanel:Hide()
-                bewareUI.activeNotePanel = nil
-                noteButton:GetScript("OnClick")()
+                StaticPopupDialogs["CONFIRM_REMOVE_NOTE"] = {
+                  text = "Are you sure you want to remove this note?",
+                  button1 = "Yes",
+                  button2 = "No",
+                  OnAccept = function()
+                    -- Remove this specific note
+                    addon.Core.RemoveNote(playerName, noteData)
+                    -- Refresh the note panel
+                    bewareUI.activeNotePanel:Hide()
+                    bewareUI.activeNotePanel = nil
+                    noteButton:GetScript("OnClick")()
+                  end,
+                  timeout = 0,
+                  whileDead = true,
+                  hideOnEscape = true,
+                  preferredIndex = 3,
+                }
+                StaticPopup_Show("CONFIRM_REMOVE_NOTE")
               end)
             end
             
@@ -186,9 +200,26 @@ local function UpdateBewareList()
       end)
     end
 
-    local addedByText = entry:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    addedByText:SetPoint("RIGHT", -25, 0)
-    addedByText:SetText(format("Added by: %s", data.addedBy))
+    local removeButton = CreateFrame("Button", nil, entry)
+    removeButton:SetSize(16, 16)
+    removeButton:SetPoint("RIGHT", -5, 0)
+    removeButton:SetNormalTexture("Interface/Buttons/UI-StopButton")
+    removeButton:SetScript("OnClick", function()
+      StaticPopupDialogs["CONFIRM_REMOVE_PLAYER"] = {
+        text = "Are you sure you want to remove " .. playerName .. " from the beware list?",
+        button1 = "Yes",
+        button2 = "No",
+        OnAccept = function()
+          PlayerRatingsHCDB.playerBewareList[playerName] = nil
+          UpdateBewareList()
+        end,
+        timeout = 0,
+        whileDead = true,
+        hideOnEscape = true,
+        preferredIndex = 3,
+      }
+      StaticPopup_Show("CONFIRM_REMOVE_PLAYER")
+    end)
     
     yOffset = yOffset - 30
   end
