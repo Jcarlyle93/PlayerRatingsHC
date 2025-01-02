@@ -208,6 +208,19 @@ local function CheckPartyForBewareList()
   end
 end
 
+local function CheckTargetBewareStatus()
+  local target = GetUnitName("target")
+  if target and PlayerRatingsHCDB.playerBewareList[target] then
+    RaidNotice_AddMessage(RaidWarningFrame, 
+    "|TInterface\\TargetingFrame\\UI-RaidTargetingIcon_7:0|t " .. 
+    target .. 
+    " in on the guild beware list!" ..
+    "|TInterface\\TargetingFrame\\UI-RaidTargetingIcon_7:0|t",
+    ChatTypeInfo["RAID_WARNING"])
+    PlaySound(8959)
+  end
+end
+
 local function CanManageBewareList()
   --local guildRank = select(1, GetGuildRankInfo(GetGuildRank()))
   return true
@@ -293,6 +306,7 @@ eventFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
 eventFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
 eventFrame:RegisterEvent("PARTY_MEMBER_ENABLE")
 eventFrame:RegisterEvent("PARTY_MEMBER_DISABLE")
+eventFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
 
 C_ChatInfo.RegisterAddonMessagePrefix(ADDON_MSG_PREFIX)
 
@@ -330,6 +344,8 @@ eventFrame:SetScript("OnEvent", function(self, event, ...)
         currentDungeonName = nil    
       end
     end
+  elseif event == "PLAYER_TARGET_CHANGED" then
+    CheckTargetBewareStatus()
   end
 end)
 
