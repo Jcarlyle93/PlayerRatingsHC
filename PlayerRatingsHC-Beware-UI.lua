@@ -146,7 +146,7 @@ local function UpdateBewareList()
             
             local noteText = noteContainer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
             noteText:SetPoint("TOPLEFT")
-            noteText:SetPoint("TOPRIGHT")
+            noteText:SetPoint("TOPRIGHT", -25, 0)
             noteText:SetText(noteData.text)
             noteText:SetJustifyH("LEFT")
             noteText:SetWordWrap(true)
@@ -155,6 +155,19 @@ local function UpdateBewareList()
             addedBy:SetPoint("TOPLEFT", noteText, "BOTTOMLEFT", 0, -2)
             addedBy:SetText(format("Added by: %s", noteData.addedBy))
             addedBy:SetTextColor(0.7, 0.7, 0.7)
+
+            if noteData.addedBy == UnitName("player") then
+              local removeButton = CreateFrame("Button", nil, noteContainer)
+              removeButton:SetSize(16, 16)
+              removeButton:SetPoint("RIGHT", 0, 0)
+              removeButton:SetNormalTexture("Interface/Buttons/UI-StopButton")
+              removeButton:SetScript("OnClick", function()
+                addon.Core.RemoveNote(playerName, noteData)
+                bewareUI.activeNotePanel:Hide()
+                bewareUI.activeNotePanel = nil
+                noteButton:GetScript("OnClick")()
+              end)
+            end
             
             yOffset = yOffset - 50
           end

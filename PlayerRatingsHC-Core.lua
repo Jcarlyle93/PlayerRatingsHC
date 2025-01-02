@@ -270,6 +270,21 @@ local function RemoveFromBewareList(playerName)
   return true
 end
 
+local function RemoveNote(playerName, noteToRemove)
+  if PlayerRatingsHCDB.playerBewareList[playerName] and PlayerRatingsHCDB.playerBewareList[playerName].notes then
+    local notes = PlayerRatingsHCDB.playerBewareList[playerName].notes
+    for i, note in ipairs(notes) do
+      if note.addedBy == noteToRemove.addedBy and note.text == noteToRemove.text then
+        table.remove(notes, i)
+        break
+      end
+    end
+    if #notes == 0 then
+      PlayerRatingsHCDB.playerBewareList[playerName].notes = {}
+    end
+  end
+end
+
 local eventFrame = CreateFrame("Frame")
 eventFrame:RegisterEvent("ADDON_LOADED")
 eventFrame:RegisterEvent("CHAT_MSG_ADDON")
@@ -350,5 +365,6 @@ addon.Core = {
   end,
   AddToBewareList = AddToBewareList,
   RemoveFromBewareList = RemoveFromBewareList,
-  CanManageBewareList = CanManageBewareList
+  CanManageBewareList = CanManageBewareList,
+  RemoveNote = RemoveNote
 }
