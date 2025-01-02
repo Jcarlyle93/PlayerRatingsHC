@@ -5,6 +5,7 @@ local MSG_TYPE_RATING = "RATE"
 local currentDungeonID = nil
 local inDungeon = false
 local partyMembers = {}
+local inCombat = false
 
 local SECURITY_KEYS = {
   "hK9$mP2#", "jL5*nQ7@", "rT3&vW4!", "xY8%zA6#" 
@@ -307,6 +308,8 @@ eventFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
 eventFrame:RegisterEvent("PARTY_MEMBER_ENABLE")
 eventFrame:RegisterEvent("PARTY_MEMBER_DISABLE")
 eventFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
+eventFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
+eventFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
 
 C_ChatInfo.RegisterAddonMessagePrefix(ADDON_MSG_PREFIX)
 
@@ -344,8 +347,13 @@ eventFrame:SetScript("OnEvent", function(self, event, ...)
         currentDungeonName = nil    
       end
     end
-  elseif event == "PLAYER_TARGET_CHANGED" then
-    CheckTargetBewareStatus()
+  elseif event == "PLAYER_REGEN_DISABLED" then
+    inCombat = true
+    if addon.bewareFrame and addon.bewareFrame:IsShown() then
+      addon.bewareFrame:Hide()
+    end
+  elseif event == "PLAYER_REGEN_ENABLED" then
+    inCombat = false
   end
 end)
 
