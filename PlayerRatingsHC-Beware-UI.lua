@@ -223,10 +223,14 @@ local function CreateBewareListUI()
   title:SetPoint("TOP", mainContentPanel, "TOP", 0, -10)
   title:SetText("Player Beware List")
 
+  local nameLabel = mainContentPanel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+  nameLabel:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -20) 
+  nameLabel:SetText("Player Name:")
+
   local nameBox = CreateFrame("EditBox", nil, mainContentPanel, "InputBoxTemplate")
   bewareUI.nameBox = nameBox
   nameBox:SetSize(200, 20)
-  nameBox:SetPoint("TOP", title, "BOTTOM", 0, -20)
+  nameBox:SetPoint("TOP", nameLabel, "BOTTOM", 0, -5)
   nameBox:SetAutoFocus(false)
 
   local noteLabel = mainContentPanel:CreateFontString(nil, "OVERLAY", "GameFontNormal")

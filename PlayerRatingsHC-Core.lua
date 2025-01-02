@@ -347,6 +347,8 @@ eventFrame:SetScript("OnEvent", function(self, event, ...)
         currentDungeonName = nil    
       end
     end
+  elseif event == "PLAYER_TARGET_CHANGED" then
+    CheckTargetBewareStatus()
   elseif event == "PLAYER_REGEN_DISABLED" then
     inCombat = true
     if addon.bewareFrame and addon.bewareFrame:IsShown() then
