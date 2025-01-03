@@ -5,7 +5,6 @@ ignore:
   - README.md
   - .git
   - .github
-  - PlayerRatingsHC-Test.lua
 
 license-output: LICENSE.txt
 
