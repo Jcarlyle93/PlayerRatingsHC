@@ -230,12 +230,15 @@ local function UpdatePartyMembers()
   if IsInGroup() then
     print("in group")  -- Debug
     for i = 1, GetNumGroupMembers() do
-      local name = GetRaidRosterInfo(i)
+      local unit = "party" .. i
+      local name = GetUnitName(unit, true)
       if name and name ~= UnitName("player") then
         if not string.find(name, "-") then
           local currentRealm = GetNormalizedRealmName()
-          print(name)  -- Debug
-          name = name .. "-" .. currentRealm
+          if currentRealm then
+            name = name .. "-" .. currentRealm
+            print("Added realm:", name)  -- Debug
+          end
         end
 
         if not partyMembers[name] then
