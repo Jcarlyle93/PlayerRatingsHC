@@ -17,7 +17,12 @@ commendCounter:SetText("1 commend available for this dungeon")
 
 local function UpdateCommendButtons(disable)
   for _, entry in pairs(playerEntries) do
-      entry.commendButton:SetEnabled(not disable)
+    entry.commendButton:SetEnabled(not disable)
+    if disable then
+      entry.commendButton:SetText("Used")
+    else
+      entry.commendButton:SetText("Commend")
+    end
   end
   commendCounter:SetText(disable and "0 commends available" or "1 commend available for this dungeon")
 end
@@ -71,6 +76,8 @@ addon.UI.SetDungeonInfo = function(text)
   dungeonInfoText:SetText(text)
   currentDungeonID = dungeonID
 end
+
+addon.UI.UpdateCommendButtons = UpdateCommendButtons
 
 addon.UI.ResetCommendState = function()
   UpdateCommendButtons(false)
