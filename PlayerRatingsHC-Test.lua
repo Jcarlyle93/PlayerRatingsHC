@@ -26,7 +26,7 @@ local testData = {
     [NormalizeTestName("Cowfarther")] = true,
     [NormalizeTestName("Tswift")] = true
   },
-  testDungeonID = 1337,
+  testDungeonID = 69,
   testDungeonName = "Indelible's Dungeon"
 }
 

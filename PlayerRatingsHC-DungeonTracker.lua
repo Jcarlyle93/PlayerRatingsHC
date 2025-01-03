@@ -65,6 +65,12 @@ local function OnDungeonEnter()
   end
 end
 
+local function OnDungeonExit()
+  if not IsDungeonLevelAppropriate() then
+    addon.UI.UpdateCommendButtons(true)
+  end
+end
+
 HasGivenCommend = function(dungeonID)
   return PlayerRatingsHCDB.dungeonCommends[dungeonID] or false
 end
@@ -94,6 +100,7 @@ eventFrame:SetScript("OnEvent", function(self, event, ...)
       ResetDungeonProgres()
       OnDungeonEnter()
     else
+      OnDungeonExit()
       DungeonTracker.currentDungeonID = nil
       DungeonTracker.currentDungeonName = nil
       DungeonTracker.currentDungeonData = nil
