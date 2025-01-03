@@ -7,32 +7,19 @@ local dungeonInfoText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 local currentDungeonID = nil
 local playerEntries = {}
 local playerListContainer = CreateFrame("Frame", nil, frame, "BackdropTemplate")
+local commendCounter = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 
 playerListContainer:SetPoint("TOP", separator, "BOTTOM", 0, -10)
 playerListContainer:SetSize(250, 180)
 
-local function UpdateRatingState(playerName)
-  if addon.Core.HasRatedPlayerForDungeon and addon.Core.GetCurrentDungeonID then
-    local dungeonID = addon.Core.GetCurrentDungeonID()
-    if dungeonID then
-      print("Checking rating state for:", playerName) -- Debug
-      print("Current dungeon ID:", dungeonID) -- Debug
-      
-      local entry = playerEntries[playerName]
-      if entry then
-        local hasRated = addon.Core.HasRatedPlayerForDungeon(playerName, dungeonID)
-        print("Has rated:", hasRated) -- Debug
-        
-        entry.commendButton:SetEnabled(not hasRated)
-        
-        if hasRated then
-          entry.commendButton:SetText("Submitted", 0, 1, 0)
-        else
-          return
-        end
-      end
-    end
+commendCounter:SetPoint("BOTTOM", frame, "BOTTOM", 0, 10)
+commendCounter:SetText("1 commend available for this dungeon")
+
+local function UpdateCommendButtons(disable)
+  for _, entry in pairs(playerEntries) do
+      entry.commendButton:SetEnabled(not disable)
   end
+  commendCounter:SetText(disable and "0 commends available" or "1 commend available for this dungeon")
 end
 
 local function CreatePlayerEntry(playerName)
@@ -53,8 +40,22 @@ local function CreatePlayerEntry(playerName)
 
   commendButton:SetScript("OnClick", function(self)
     addon.Core.SendRating(playerName, true)
-    UpdateRatingState(playerName)
+    UpdateCommendButtons(true)
   end)
+
+  local function UpdateRatingState(playerName)
+    if addon.Core.HasRatedPlayerForDungeon and addon.Core.GetCurrentDungeonID then
+      local dungeonID = addon.Core.GetCurrentDungeonID()
+      if dungeonID then
+        local hasGivenCommend = addon.DungeonTracker.HasGivenCommend(dungeonID)
+        if hasGivenCommend then
+          UpdateCommendButtons(true)
+        else
+          UpdateCommendButtons(false)
+        end
+      end
+    end
+  end
 
   return {
     frame = entry,
@@ -69,6 +70,10 @@ addon.UI.mainFrame = frame
 addon.UI.SetDungeonInfo = function(text)
   dungeonInfoText:SetText(text)
   currentDungeonID = dungeonID
+end
+
+addon.UI.ResetCommendState = function()
+  UpdateCommendButtons(false)
 end
 
 addon.UI.UpdatePartyList = function(partyMembers)
@@ -164,8 +169,11 @@ end)
 
 frame:SetScript("OnShow", function()
   local dungeonID = addon.Core.GetCurrentDungeonID()
-  print("Current dungeon ID from Core:", dungeonID)  -- Debug
-  UpdateRatingState(playerName)
+  if dungeonID and PlayerRatingsHCDB.dungeonCommends[dungeonID] then
+    UpdateCommendButtons(true)
+  else
+    UpdateCommendButtons(false)
+  end
 end)
 
 SLASH_PLAYERSRATINGSHC1 = "/prating"

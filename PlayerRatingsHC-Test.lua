@@ -30,6 +30,8 @@ local testData = {
   testDungeonName = "Indelible's Dungeon"
 }
 
+addon.Core.SetCurrentDungeonID(testData.testDungeonID)
+
 -- Simulate complete test scenario
 local function RunFullTest()
   -- Simulate entering dungeon

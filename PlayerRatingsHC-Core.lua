@@ -6,6 +6,10 @@ local currentDungeonID = nil
 local inDungeon = false
 local partyMembers = {}
 local inCombat = false
+local SYNC_MSG_PREFIX = "PRHC_SYNC"
+local lastUpdateRequest = 0
+local UPDATE_THROTTLE = 300
+local isSyncing = false
 
 local SECURITY_KEYS = {
   "hK9$mP2#", "jL5*nQ7@", "rT3&vW4!", "xY8%zA6#" 
@@ -33,6 +37,54 @@ PlayerRatingsHCDB.outgoingRatings = PlayerRatingsHCDB.outgoingRatings or {}
 PlayerRatingsHCDB.playerBewareList = PlayerRatingsHCDB.playerBewareList or {}
 
 addon.DB = PlayerRatingsHCDB
+
+local function GetLongestOnlineGuildMember()
+  if not IsInGuild() then return nil end
+  
+  local numMembers = GetNumGuildMembers()
+  local longestOnlineMember = nil
+  local longestOnlineTime = 0
+  
+  for i = 1, numMembers do
+    local name, _, _, _, _, _, _, _, online = GetGuildRosterInfo(i)
+    if online and name ~= UnitName("player") then
+      local lastOnline = select(12, GetGuildRosterInfo(i))
+      if lastOnline and lastOnline > longestOnlineTime then
+        longestOnlineMember = name
+        longestOnlineTime = lastOnline
+      end
+    end
+  end
+  
+  return longestOnlineMember
+end
+
+local function GetLatestListVersion()
+  local latestVersion = 0
+  for _, data in pairs(PlayerRatingsHCDB.playerBewareList) do
+    if data.timestamp > latestVersion then
+      latestVersion = data.timestamp
+    end
+  end
+  return latestVersion
+end
+
+local function RequestListUpdate()
+  if isSyncing then return end
+  
+  local now = time()
+  if now - lastUpdateRequest < UPDATE_THROTTLE then return end
+  
+  local targetPlayer = GetLongestOnlineGuildMember()
+  if targetPlayer then
+    isSyncing = true
+    C_ChatInfo.SendAddonMessage(SYNC_MSG_PREFIX, 
+      "REQUEST_LIST:" .. GetLatestListVersion(), 
+      "WHISPER", 
+      targetPlayer)
+    lastUpdateRequest = now
+  end
+end
 
 local function HasRatedPlayerForDungeon(playerName, dungeonID)
   PlayerRatingsHCDB.outgoingRatings = PlayerRatingsHCDB.outgoingRatings or {}
@@ -178,12 +230,15 @@ local function UpdatePartyMembers()
   if IsInGroup() then
     print("in group")  -- Debug
     for i = 1, GetNumGroupMembers() do
-      local name = GetRaidRosterInfo(i)
+      local unit = "party" .. i
+      local name = GetUnitName(unit, true)
       if name and name ~= UnitName("player") then
         if not string.find(name, "-") then
           local currentRealm = GetNormalizedRealmName()
-          print(name)  -- Debug
-          name = name .. "-" .. currentRealm
+          if currentRealm then
+            name = name .. "-" .. currentRealm
+            print("Added realm:", name)  -- Debug
+          end
         end
 
         if not partyMembers[name] then
@@ -364,6 +419,10 @@ addon.Core = {
     local dungeonID = currentDungeonID or lastDungeonID
     if not dungeonID then
       print("Error: No dungeon ID available")  -- Debug
+      return
+    end
+    if addon.DungeonTracker.HasGivenCommend(dungeonID) then
+      print("You've already given a commendation for this dungeon run")
       return
     end
     if HasRatedPlayerForDungeon(targetPlayer, dungeonID) then
