@@ -27,6 +27,7 @@ PlayerRatingsHCDB = PlayerRatingsHCDB or {
   validationLog = {},
   outgoingRatings = {},
   playerBewareList = {},
+  dungeonCommends = {},
   version = 1
 }
 

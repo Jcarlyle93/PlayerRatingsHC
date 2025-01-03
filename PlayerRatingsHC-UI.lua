@@ -175,6 +175,7 @@ GameTooltip:HookScript("OnTooltipSetUnit", function(self)
 end)
 
 frame:SetScript("OnShow", function()
+  PlayerRatingsHCDB.dungeonCommends = PlayerRatingsHCDB.dungeonCommends or {}
   local dungeonID = addon.Core.GetCurrentDungeonID()
   if dungeonID and PlayerRatingsHCDB.dungeonCommends[dungeonID] then
     UpdateCommendButtons(true)
