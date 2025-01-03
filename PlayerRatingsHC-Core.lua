@@ -421,6 +421,10 @@ addon.Core = {
       print("Error: No dungeon ID available")  -- Debug
       return
     end
+    if addon.DungeonTracker.HasGivenCommend(dungeonID) then
+      print("You've already given a commendation for this dungeon run")
+      return
+    end
     if HasRatedPlayerForDungeon(targetPlayer, dungeonID) then
       print("You have already rated " .. targetPlayer .. " for this dungeon")  -- Debug
       return

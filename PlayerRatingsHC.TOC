@@ -6,6 +6,8 @@
 ## Version: @project-version@
 
 PlayerRatingsHC-Core.lua
+PlayerRatingsHC-DungeonData.lua
+PlayerRatingsHC-DungeonTracker.lua
 PlayerRatingsHC-UI.lua
 PlayerRatingsHC-Beware-UI.lua
 PlayerRatingsHC-Test.lua
