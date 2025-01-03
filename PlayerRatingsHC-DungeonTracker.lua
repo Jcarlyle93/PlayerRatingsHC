@@ -92,7 +92,7 @@ eventFrame:SetScript("OnEvent", function(self, event, ...)
     end
   elseif event == "PLAYER_ENTERING_WORLD" or event == "ZONE_CHANGED_NEW_AREA" then
     local name, instanceType, _, _, _, _, _, instanceID = GetInstanceInfo()
-    if instanceType == "party" then
+    if instanceType == "party" and instanceID ~= 409 and instanceID ~= 249 and instanceID ~= 309 and instanceID ~= 531 and instanceID ~= 509 then
       print("in instance") -- debug
       DungeonTracker.currentDungeonID = instanceID
       DungeonTracker.currentDungeonName = name
